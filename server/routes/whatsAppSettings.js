@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { verifyToken } = require('./auth').middleware;
+const { authenticate } = require('./auth');
 
 // Get WhatsApp settings
-router.get('/', verifyToken, async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
     const result = await db.query('SELECT * FROM whatsapp_settings LIMIT 1');
     
@@ -48,7 +48,7 @@ router.get('/', verifyToken, async (req, res) => {
 });
 
 // Update WhatsApp settings
-router.put('/', verifyToken, async (req, res) => {
+router.put('/', authenticate, async (req, res) => {
   try {
     const {
       auto_send_delay,

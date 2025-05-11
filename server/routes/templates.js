@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { verifyToken } = require('./auth').middleware;
+const { authenticate } = require('./auth');
 
 // Get all templates
-router.get('/', verifyToken, async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
     const result = await db.query('SELECT * FROM templates ORDER BY created_at DESC');
     res.json(result.rows);
@@ -15,7 +15,7 @@ router.get('/', verifyToken, async (req, res) => {
 });
 
 // Get templates by courier type
-router.get('/by-courier/:courierType', verifyToken, async (req, res) => {
+router.get('/by-courier/:courierType', authenticate, async (req, res) => {
   try {
     const { courierType } = req.params;
     const result = await db.query(
@@ -30,7 +30,7 @@ router.get('/by-courier/:courierType', verifyToken, async (req, res) => {
 });
 
 // Get template by ID
-router.get('/:id', verifyToken, async (req, res) => {
+router.get('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await db.query('SELECT * FROM templates WHERE id = $1', [id]);
@@ -47,7 +47,7 @@ router.get('/:id', verifyToken, async (req, res) => {
 });
 
 // Create a new template
-router.post('/', verifyToken, async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
   try {
     const {
       name,
@@ -83,7 +83,7 @@ router.post('/', verifyToken, async (req, res) => {
 });
 
 // Update a template
-router.put('/:id', verifyToken, async (req, res) => {
+router.put('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -130,7 +130,7 @@ router.put('/:id', verifyToken, async (req, res) => {
 });
 
 // Delete a template
-router.delete('/:id', verifyToken, async (req, res) => {
+router.delete('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -159,7 +159,7 @@ router.delete('/:id', verifyToken, async (req, res) => {
 });
 
 // Initialize default templates if none exist
-router.post('/init-defaults', verifyToken, async (req, res) => {
+router.post('/init-defaults', authenticate, async (req, res) => {
   try {
     // Check if any templates exist
     const checkResult = await db.query('SELECT COUNT(*) FROM templates');
