@@ -3,6 +3,10 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
+// Import debug helper
+const debug = require('./debug');
+debug.log('Starting application');
+
 // Import database and migrations
 const db = require('./db');
 const runMigrations = require('./db/runMigrations');
@@ -64,23 +68,38 @@ app.use((err, req, res, next) => {
 // Function to initialize the server
 const startServer = () => {
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+    debug.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
   });
 };
 
 // In production, run migrations before starting the server
 if (process.env.NODE_ENV === 'production') {
-  console.log('Running migrations before starting server...');
-  runMigrations()
+  debug.log('Running migrations before starting server...');
+  
+  // First run debug to check system
+  debug.runDebug()
     .then(() => {
-      console.log('Migrations completed successfully, starting server...');
+      debug.log('Debug check completed, proceeding with migrations');
+      return runMigrations();
+    })
+    .then(() => {
+      debug.log('Migrations completed successfully, starting server...');
       startServer();
     })
     .catch(err => {
-      console.error('Failed to run migrations:', err);
+      debug.log('Failed to run migrations or debug:', err);
       process.exit(1);
     });
 } else {
   // In development, just start the server
   startServer();
 }
+
+// Add global error handler
+process.on('uncaughtException', (error) => {
+  debug.log('UNCAUGHT EXCEPTION:', error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  debug.log('UNHANDLED REJECTION:', { reason, promise });
+});
