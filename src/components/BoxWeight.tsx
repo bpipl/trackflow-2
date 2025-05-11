@@ -94,8 +94,11 @@ export const BoxWeight: React.FC<BoxWeightProps> = ({
           generateSteelCargoSlipPDF({...updatedSlip, courierName: "Steel Courier & Cargo"});
         }
       } else {
-        // Fallback to the original print method if slip data is not available
-        printDocument('courier');
+        // Log error for debugging
+        console.error('Error: Slip data not available for printing. Using PDF is required.');
+        
+        // Create a temporary alert to notify the user
+        alert('Error: Slip data not available for PDF printing. Please use the Print button in the actions column instead.');
       }
     }, 300);
   };
