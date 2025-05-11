@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { authenticate } = require('./auth');
+
+// Import the authenticate middleware directly from auth module
+// Note: auth.js exports { router, authenticate }
+const authModule = require('./auth');
+const authenticate = authModule.authenticate;
 
 // Get all templates
 router.get('/', authenticate, async (req, res) => {
