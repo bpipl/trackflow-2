@@ -22,3 +22,24 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Temporary files
+.tmp
+.temp
+
+# Railway specific
+.railway
+
+# Database
+*.sqlite
+*.sqlite3
+
+# Dependency lock files - uncomment if you prefer not to commit these
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
