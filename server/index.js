@@ -37,8 +37,14 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Test database connection
-app.get('/api/health', async (req, res) => {
+// Import health check routes
+const healthRoutes = require('./health');
+
+// Health check endpoint for Railway
+app.use('/api', healthRoutes);
+
+// Database health check (separate from the Railway healthcheck)
+app.get('/api/db-health', async (req, res) => {
   try {
     const client = await pool.connect();
     await client.query('SELECT NOW()');
