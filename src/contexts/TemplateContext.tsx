@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { templatesAPI } from '@/lib/apiClient';
+import { useToast } from '@/hooks/use-toast';
 
+// UI Template interface
 interface Template {
   id: string;
   name: string;
@@ -12,14 +15,58 @@ interface Template {
   updatedAt: string;
 }
 
+// API Template interface
+interface ApiTemplate {
+  id: string;
+  name: string;
+  html: string;
+  css: string;
+  json?: any;
+  courier_type: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 interface TemplateContextType {
   templates: Template[];
   activeTemplate: Template | null;
   setActiveTemplate: (template: Template) => void;
-  saveTemplate: (template: Partial<Template>) => void;
-  deleteTemplate: (id: string) => void;
+  saveTemplate: (template: Partial<Template>) => Promise<void>;
+  deleteTemplate: (id: string) => Promise<void>;
   getTemplatesByCourierType: (courierType: string) => Template[];
+  isLoading: boolean;
+  initializeTemplates: () => Promise<void>;
 }
+
+// Convert API template to UI format
+const apiToUiFormat = (apiTemplate: ApiTemplate): Template => {
+  return {
+    id: apiTemplate.id,
+    name: apiTemplate.name,
+    html: apiTemplate.html,
+    css: apiTemplate.css,
+    json: apiTemplate.json,
+    courierType: apiTemplate.courier_type,
+    isDefault: apiTemplate.is_default,
+    createdAt: apiTemplate.created_at,
+    updatedAt: apiTemplate.updated_at
+  };
+};
+
+// Convert UI template to API format
+const uiToApiFormat = (uiTemplate: Partial<Template>): Partial<ApiTemplate> => {
+  const apiTemplate: Partial<ApiTemplate> = {};
+  
+  if (uiTemplate.name !== undefined) apiTemplate.name = uiTemplate.name;
+  if (uiTemplate.html !== undefined) apiTemplate.html = uiTemplate.html;
+  if (uiTemplate.css !== undefined) apiTemplate.css = uiTemplate.css;
+  if (uiTemplate.json !== undefined) apiTemplate.json = uiTemplate.json;
+  if (uiTemplate.courierType !== undefined) apiTemplate.courier_type = uiTemplate.courierType;
+  if (uiTemplate.isDefault !== undefined) apiTemplate.is_default = uiTemplate.isDefault;
+  
+  return apiTemplate;
+};
 
 const TemplateContext = createContext<TemplateContextType | undefined>(undefined);
 
@@ -34,149 +81,183 @@ export const useTemplates = () => {
 export const TemplateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [activeTemplate, setActiveTemplate] = useState<Template | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
   
-  // Load templates from localStorage on mount
+  // Load templates from API on mount
   useEffect(() => {
-    const savedTemplates = localStorage.getItem('courierTemplates');
-    if (savedTemplates) {
-      try {
-        const parsedTemplates = JSON.parse(savedTemplates);
-        setTemplates(parsedTemplates);
-        
-        // Set the first default template as active if no active template
-        if (!activeTemplate && parsedTemplates.length > 0) {
-          const defaultTemplate = parsedTemplates.find((t: Template) => t.isDefault);
-          if (defaultTemplate) {
-            setActiveTemplate(defaultTemplate);
-          } else if (parsedTemplates.length > 0) {
-            setActiveTemplate(parsedTemplates[0]);
-          }
-        }
-      } catch (error) {
-        console.error('Error parsing saved templates:', error);
-      }
-    } else {
-      // Initialize with default templates if none exist
-      initializeDefaultTemplates();
-    }
+    fetchTemplates();
   }, []);
   
-  // Save templates to localStorage whenever they change
-  useEffect(() => {
-    if (templates.length > 0) {
-      localStorage.setItem('courierTemplates', JSON.stringify(templates));
-    }
-  }, [templates]);
-  
-  // Initialize with default templates for different courier types
-  const initializeDefaultTemplates = () => {
-    const defaultTemplates: Template[] = [
-      {
-        id: 'default-trackon',
-        name: 'Default Trackon Template',
-        html: '', // This would normally contain the HTML for Trackon slips
-        css: '', // This would normally contain the CSS for Trackon slips
-        courierType: 'trackon',
-        isDefault: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: 'default-steel',
-        name: 'Default Steel Cargo Template',
-        html: '', // This would normally contain the HTML for Steel Cargo slips
-        css: '', // This would normally contain the CSS for Steel Cargo slips
-        courierType: 'steel',
-        isDefault: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: 'default-globalprimex',
-        name: 'Default Global Primex Template',
-        html: '', // This would normally contain the HTML for Global Primex slips
-        css: '', // This would normally contain the CSS for Global Primex slips
-        courierType: 'globalprimex',
-        isDefault: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: 'default-shree',
-        name: 'Default Shree Courier Template',
-        html: '', // This would normally contain the HTML for Shree Courier slips
-        css: '', // This would normally contain the CSS for Shree Courier slips
-        courierType: 'shree',
-        isDefault: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+  // Fetch templates from API
+  const fetchTemplates = async () => {
+    try {
+      setIsLoading(true);
+      const apiTemplates = await templatesAPI.getAll() as ApiTemplate[];
+      
+      if (apiTemplates.length === 0) {
+        // If no templates exist, initialize defaults
+        await initializeTemplates();
+        return;
       }
-    ];
-    
-    setTemplates(defaultTemplates);
-    setActiveTemplate(defaultTemplates[0]);
+      
+      const formattedTemplates = apiTemplates.map(apiToUiFormat);
+      setTemplates(formattedTemplates);
+      
+      // Set the first default template as active if no active template
+      if (!activeTemplate && formattedTemplates.length > 0) {
+        const defaultTemplate = formattedTemplates.find(t => t.isDefault);
+        if (defaultTemplate) {
+          setActiveTemplate(defaultTemplate);
+        } else if (formattedTemplates.length > 0) {
+          setActiveTemplate(formattedTemplates[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching templates:', error);
+      toast({
+        title: "Error loading templates",
+        description: "Could not load templates from the server.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Initialize with default templates
+  const initializeTemplates = async () => {
+    try {
+      setIsLoading(true);
+      await templatesAPI.initDefaults();
+      
+      // Fetch again after initialization
+      const apiTemplates = await templatesAPI.getAll() as ApiTemplate[];
+      const formattedTemplates = apiTemplates.map(apiToUiFormat);
+      
+      setTemplates(formattedTemplates);
+      
+      if (formattedTemplates.length > 0) {
+        const defaultTemplate = formattedTemplates.find(t => t.isDefault);
+        setActiveTemplate(defaultTemplate || formattedTemplates[0]);
+      }
+      
+      toast({
+        title: "Templates initialized",
+        description: "Default templates have been created successfully."
+      });
+    } catch (error) {
+      console.error('Error initializing templates:', error);
+      toast({
+        title: "Initialization failed",
+        description: "Failed to create default templates.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   // Save or update a template
-  const saveTemplate = (templateData: Partial<Template>) => {
-    const now = new Date().toISOString();
-    
-    if (templateData.id) {
-      // Update existing template
-      setTemplates(prevTemplates => 
-        prevTemplates.map(template => 
-          template.id === templateData.id 
-            ? { 
-                ...template, 
-                ...templateData, 
-                updatedAt: now 
-              } 
-            : template
-        )
-      );
+  const saveTemplate = async (templateData: Partial<Template>) => {
+    try {
+      setIsLoading(true);
+      const apiData = uiToApiFormat(templateData);
+      
+      let savedTemplate: ApiTemplate;
+      
+      if (templateData.id) {
+        // Update existing template
+        savedTemplate = await templatesAPI.update(templateData.id, apiData) as ApiTemplate;
+      } else {
+        // Create new template
+        savedTemplate = await templatesAPI.create(apiData) as ApiTemplate;
+      }
+      
+      const formattedTemplate = apiToUiFormat(savedTemplate);
+      
+      // Update templates list
+      setTemplates(prevTemplates => {
+        const existingIndex = prevTemplates.findIndex(t => t.id === formattedTemplate.id);
+        
+        if (existingIndex >= 0) {
+          // Replace existing template
+          return prevTemplates.map((template, index) => 
+            index === existingIndex ? formattedTemplate : template
+          );
+        } else {
+          // Add new template
+          return [...prevTemplates, formattedTemplate];
+        }
+      });
       
       // Update active template if it's the one being edited
-      if (activeTemplate && activeTemplate.id === templateData.id) {
-        setActiveTemplate(prev => prev ? { ...prev, ...templateData, updatedAt: now } : null);
+      if (activeTemplate && activeTemplate.id === formattedTemplate.id) {
+        setActiveTemplate(formattedTemplate);
+      } else if (!templateData.id) {
+        // Set new template as active
+        setActiveTemplate(formattedTemplate);
       }
-    } else {
-      // Create new template
-      const newTemplate: Template = {
-        id: `template-${Date.now()}`,
-        name: templateData.name || 'Untitled Template',
-        html: templateData.html || '',
-        css: templateData.css || '',
-        json: templateData.json || null,
-        courierType: templateData.courierType || 'generic',
-        isDefault: false,
-        createdAt: now,
-        updatedAt: now
-      };
       
-      setTemplates(prevTemplates => [...prevTemplates, newTemplate]);
-      setActiveTemplate(newTemplate);
+      toast({
+        title: "Template saved",
+        description: "Your template has been saved successfully."
+      });
+    } catch (error) {
+      console.error('Error saving template:', error);
+      toast({
+        title: "Save failed",
+        description: "Failed to save template changes.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
   
   // Delete a template
-  const deleteTemplate = (id: string) => {
-    // Don't allow deletion of default templates
-    const templateToDelete = templates.find(t => t.id === id);
-    if (templateToDelete?.isDefault) {
-      console.error('Cannot delete default templates');
-      return;
-    }
-    
-    setTemplates(prevTemplates => prevTemplates.filter(template => template.id !== id));
-    
-    // If the active template is being deleted, set another one as active
-    if (activeTemplate && activeTemplate.id === id) {
-      const remainingTemplates = templates.filter(template => template.id !== id);
-      if (remainingTemplates.length > 0) {
-        setActiveTemplate(remainingTemplates[0]);
-      } else {
-        setActiveTemplate(null);
+  const deleteTemplate = async (id: string) => {
+    try {
+      setIsLoading(true);
+      
+      // Don't allow deletion of default templates
+      const templateToDelete = templates.find(t => t.id === id);
+      if (templateToDelete?.isDefault) {
+        toast({
+          title: "Cannot delete default template",
+          description: "Default templates cannot be deleted.",
+          variant: "destructive"
+        });
+        return;
       }
+      
+      await templatesAPI.delete(id);
+      
+      setTemplates(prevTemplates => prevTemplates.filter(template => template.id !== id));
+      
+      // If the active template is being deleted, set another one as active
+      if (activeTemplate && activeTemplate.id === id) {
+        const remainingTemplates = templates.filter(template => template.id !== id);
+        if (remainingTemplates.length > 0) {
+          setActiveTemplate(remainingTemplates[0]);
+        } else {
+          setActiveTemplate(null);
+        }
+      }
+      
+      toast({
+        title: "Template deleted",
+        description: "The template has been deleted successfully."
+      });
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete template.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -191,7 +272,9 @@ export const TemplateProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setActiveTemplate,
     saveTemplate,
     deleteTemplate,
-    getTemplatesByCourierType
+    getTemplatesByCourierType,
+    isLoading,
+    initializeTemplates
   };
   
   return (

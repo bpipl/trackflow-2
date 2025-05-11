@@ -95,6 +95,39 @@ export const authAPI = {
     apiRequest('get', '/auth/me')
 };
 
+// WhatsApp settings endpoints
+export const whatsAppSettingsAPI = {
+  get: () => 
+    apiRequest('get', '/whatsapp-settings'),
+  
+  update: (data: any) => 
+    apiRequest('put', '/whatsapp-settings', data)
+};
+
+// Templates endpoints
+export const templatesAPI = {
+  getAll: () => 
+    apiRequest('get', '/templates'),
+  
+  getById: (id: string) => 
+    apiRequest('get', `/templates/${id}`),
+  
+  getByCourierType: (courierType: string) => 
+    apiRequest('get', `/templates/by-courier/${courierType}`),
+  
+  create: (data: any) => 
+    apiRequest('post', '/templates', data),
+  
+  update: (id: string, data: any) => 
+    apiRequest('put', `/templates/${id}`, data),
+  
+  delete: (id: string) => 
+    apiRequest('delete', `/templates/${id}`),
+  
+  initDefaults: () => 
+    apiRequest('post', '/templates/init-defaults')
+};
+
 // Couriers endpoints
 export const couriersAPI = {
   getAll: () => 
