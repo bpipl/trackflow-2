@@ -1,129 +1,106 @@
-# Railway Deployment Guide
+# Railway Setup for Track Flow Courier Application
 
-This guide provides detailed instructions for deploying the Track Flow Courier application to Railway.app.
+This document provides a comprehensive guide on how the Track Flow Courier application was set up on Railway.app with a PostgreSQL database.
 
-## 1. Setting Up a Railway Account
+## Setup Overview
 
-1. Sign up for a Railway account at [railway.app](https://railway.app/)
-2. Install the Railway CLI (optional but helpful):
-   ```bash
-   npm install -g @railway/cli
-   ```
-3. Login to the Railway CLI:
-   ```bash
-   railway login
-   ```
+The Track Flow Courier application has been successfully deployed on Railway with the following components:
 
-## 2. Creating a New Project
+1. A React frontend (built with Vite) served through Express.js
+2. A Node.js/Express backend API for handling data operations
+3. A PostgreSQL database hosted on Railway
 
-1. Go to the Railway dashboard and click "New Project"
-2. Select "Deploy from GitHub repo"
-3. Connect your GitHub account if not already connected
-4. Select the repository containing your Track Flow Courier application
-5. Railway will automatically detect your package.json and set up the project
+## Railway Configuration
 
-## 3. Setting Up PostgreSQL Database
+### Project Structure
+- **Service Name**: trackflow-2
+- **Environment**: production
+- **Domain**: trackflow-2-production.up.railway.app
+- **Region**: europe-west4
 
-1. From your project dashboard, click "New Service" → "Database" → "PostgreSQL"
-2. Wait for the database to be provisioned
-3. Click on the PostgreSQL service to view its details
-4. Go to the "Data" tab to access the SQL editor
-5. Copy the SQL from `server/db/migrations.sql` and paste it into the SQL editor
-6. Click "Run" to execute the migrations and set up your database schema
+### Environment Variables
+The following environment variables have been configured:
 
-## 4. Configuring Environment Variables
+- `DATABASE_URL`: PostgreSQL connection string provided by Railway
+- `JWT_SECRET`: Secret key for JWT token generation and validation
+- `NODE_ENV`: Set to "production"
+- `PORT`: Set to 10000
 
-1. In your project dashboard, click on the "Variables" tab
-2. Add the following environment variables:
+### Database Configuration
+The PostgreSQL database has been provisioned with the following details:
 
+- **Host**: caboose.proxy.rlwy.net
+- **Port**: 11599
+- **Database Name**: railway
+- **Username**: postgres
+
+The database schema is initialized from the migrations in `server/db/migrations.sql`.
+
+## Deployment Setup
+
+### Build Process
+The application uses a Nixpacks builder with the following configuration:
+
+```json
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "npm run build"
+  },
+  "deploy": {
+    "numReplicas": 1,
+    "startCommand": "node server/index.js",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 3
+  }
+}
 ```
-DATABASE_URL=<Railway will automatically provide this>
-JWT_SECRET=<generate a secure random string for production>
-NODE_ENV=production
-```
 
-3. For the frontend service, add:
-```
-VITE_API_URL=<your-backend-api-url>
-```
-   Note: This will be `https://<your-project-name>-production.up.railway.app/api`
+### File Structure
+- React frontend code is in `/src`
+- Server code is in `/server`
+- Backend routes are in `/server/routes`
+- Database migrations are in `/server/db/migrations.sql`
 
-## 5. Setting Up the Project for Railway
+## Using the Application
 
-We've already prepared the project for Railway deployment with:
+The application is accessible at: https://trackflow-2-production.up.railway.app/
 
-1. Added server-side code in `server/index.js` to handle API requests
-2. Updated the Supabase client to use the backend API
-3. Added JWT authentication handling
-4. Modified package.json to include the required dependencies and scripts
+The backend API endpoints are:
+- `/api/auth` - Authentication endpoints
+- `/api/customers` - Customer management
+- `/api/couriers` - Courier management
+- `/api/slips` - Shipping slips
+- `/api/sender-addresses` - Sender address management
+- `/api/audit-logs` - System audit logs
+- `/health` - Health check endpoint
 
-## 6. Deploying to Railway
+## Connecting Local Development
 
-1. Push all changes to your GitHub repository:
-   ```bash
-   git add .
-   git commit -m "Prepare for Railway deployment"
-   git push
-   ```
+If you want to connect your local development environment to the Railway database:
 
-2. Railway will automatically detect the changes and start the deployment process
-3. You can monitor the deployment in the Railway dashboard
+1. Install the Railway CLI: `npm i -g @railway/cli`
+2. Login to Railway: `railway login`
+3. Link your project: `railway link`
+4. Use variables in your local environment: `railway variables`
+5. Run locally using the Railway variables: `railway run npm run dev`
 
-## 7. Verifying the Deployment
+## Notes on Setup Process
 
-1. Once deployed, Railway will provide a URL for your application
-2. Open the URL in your browser to verify the deployment was successful
-3. Try logging in with the demo credentials:
-   - Username: admin
-   - Password: (any password will work in the initial setup as we're not checking passwords)
+1. Created a new Railway project
+2. Added a PostgreSQL plugin to the project
+3. Created a new service for the application
+4. Set up necessary environment variables
+5. Configured the railway.json with build and deployment settings
+6. Connected the Railway project to the GitHub repository
+7. Deployed the application with `railway up` command
 
-## 8. Common Issues and Troubleshooting
+## Troubleshooting
 
-### Connection Issues
-If the frontend cannot connect to the backend, verify:
-- The `VITE_API_URL` environment variable is set correctly
-- The backend service is running correctly
-- CORS is properly configured in the backend
+If the application fails to start or respond:
 
-### Database Issues
-If you encounter database errors:
-- Verify the migrations ran successfully
-- Check that the `DATABASE_URL` is being properly used
-- Ensure the PostgreSQL service is running
-
-### Authorization Issues
-If authentication is not working:
-- Check that the `JWT_SECRET` is properly set
-- Ensure the token is being passed properly in the Authorization header
-- Verify the token verification logic in the backend
-
-## 9. Local Development After Railway Setup
-
-For local development, you can use the following commands:
-
-1. Start the frontend development server:
-   ```bash
-   npm run dev
-   ```
-
-2. Start the backend development server:
-   ```bash
-   npm run dev:server
-   ```
-
-3. Or start both concurrently:
-   ```bash
-   npm run dev:all
-   ```
-
-Make sure your `.env` file contains the appropriate local development values.
-
-## 10. Next Steps
-
-After successful deployment, consider:
-
-1. Setting up proper password hashing in the login endpoint
-2. Implementing more robust error handling
-3. Adding additional API endpoints for all required functionality
-4. Setting up automated backups for your PostgreSQL database
-5. Configuring a custom domain for your application
+1. Check Railway logs: `railway logs`
+2. Verify database connectivity
+3. Ensure all required environment variables are set properly
+4. Check for any errors in the application server code
