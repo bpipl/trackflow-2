@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2563eb;
+            text-align: center;
+        }
+        .button {
+            display: inline-block;
+            background-color: #2563eb;
+            color: white;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>TrackFlow Print Test Page</h1>
+    
+    <div class="card">
+        <h2>Print Functionality Tests</h2>
+        <p>This page allows you to test the various print functions implemented in the application.</p>
+        
+        <h3>Updated Components:</h3>
+        <ul>
+            <li>✅ ShreeCourierSlip - Added proper slip ID</li>
+            <li>✅ GlobalPrimexSlip - Added proper slip ID</li>
+            <li>✅ SteelCargoSlip - Added proper slip ID</li>
+            <li>✅ TrackonSlip - Added proper slip ID</li>
+            <li>✅ PackingInstructionReceipt - Added proper slip ID</li>
+        </ul>
+        
+        <h3>Updated Pages:</h3>
+        <ul>
+            <li>✅ Reports.tsx - Using printUtil for better print experience</li>
+            <li>✅ GenerateSlip.tsx - Using printUtil with correct types</li>
+        </ul>
+    </div>
+    
+    <div class="card">
+        <h2>Testing Instructions</h2>
+        <p>To test the printing functionality:</p>
+        <ol>
+            <li>Run the application with <code>npm run dev</code></li>
+            <li>Log in to the application</li>
+            <li>Generate a new slip from the "Generate Courier Slip" page</li>
+            <li>Print the slip using the print button</li>
+            <li>Go to the Reports page</li>
+            <li>Find your slip and test the print functionality there as well</li>
+        </ol>
+        
+        <p>The new printing system should:</p>
+        <ul>
+            <li>Correctly identify and print only the selected slip</li>
+            <li>Apply proper print styling</li>
+            <li>Work with all courier types</li>
+            <li>Support both full slips and packing receipts</li>
+        </ul>
+    </div>
+    
+    <a href="http://localhost:8081/" class="button">Go to Application</a>
+</body>
+</html>

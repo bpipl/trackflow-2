@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steel Cargo Slip PDF Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .slip-preview {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .test-slip {
+            border: 2px solid #000;
+            border-radius: 8px;
+            margin: 0.1in auto;
+            width: 6.5in;
+            height: 2.7in;
+            box-sizing: border-box;
+            background: #f8f8f8;
+            transform: scale(0.75);
+            transform-origin: top center;
+        }
+        .row {
+            display: flex;
+            border-bottom: 1px solid black;
+        }
+        .column {
+            padding: 5px;
+        }
+        .column-border-right {
+            border-right: 1px solid black;
+        }
+        .barcode-col {
+            width: 33.3%;
+            text-align: center;
+        }
+        .company-col {
+            width: 41.7%;
+            text-align: center;
+        }
+        .destination-col {
+            width: 25%;
+            position: relative;
+        }
+        .copy-type {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        .title {
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border-left: 4px solid #4CAF50;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Steel Cargo Slip PDF Test</h1>
+    <p>This page tests the PDF generation for Steel Cargo courier slips without web components rendering in the output.</p>
+    
+    <button id="generatePdfButton">Generate PDF</button>
+    
+    <div id="result" class="result" style="display: none;">
+        PDF generation requested. Check your print dialog.
+    </div>
+    
+    <div class="slip-preview">
+        <h3>Preview of Slip (HTML rendering)</h3>
+        <div class="test-slip">
+            <div class="row">
+                <div class="column column-border-right barcode-col">
+                    <div class="title">Document/Packet No.</div>
+                    <div>[Barcode would be here]</div>
+                    <div style="font-size: 18px; font-weight: bold;">TR12345678</div>
+                </div>
+                <div class="column column-border-right company-col">
+                    <div style="font-size: 16px; font-weight: bold; color: #c00;">Steel Courier & Cargo Ltd.</div>
+                    <div style="font-size: 10px; color: #c00;">EXPRESS DISTRIBUTION SERVICES</div>
+                    <div style="font-size: 10px;">
+                        Regd. Office: 4/1, Desh Bandhu Gupta Road,<br>
+                        Paharganj, New Delhi - 110055<br>
+                        Email: info@steelcourier.com
+                    </div>
+                </div>
+                <div class="column destination-col">
+                    <div class="title" style="border-bottom: 1px solid black;">Destination</div>
+                    <div style="font-size: 16px; font-weight: bold; text-align: center; margin-top: 20px;">
+                        MUMBAI
+                    </div>
+                    <div class="copy-type">Original</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample courier slip data
+        const sampleSlip = {
+            id: "123456",
+            trackingId: "TR12345678",
+            customerName: "Test Customer",
+            customerAddress: "123 Test Street, Mumbai, Maharashtra, 400001",
+            customerMobile: "9876543210",
+            courierName: "Steel Courier & Cargo Ltd.",
+            senderName: "Test Sender",
+            senderAddress: "456 Sender Road, Delhi, 110001, Phone: 1234567890",
+            method: "air",
+            weight: 1.5,
+            numberOfBoxes: 2,
+            isToPayShipping: false
+        };
+
+        // Function to convert SVG to base64 data URL
+        const generateBarcodeDataURL = (trackingId) => {
+            // Create a basic barcode SVG (simplified version)
+            const svgString = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="200" height="50">
+                    <rect x="10" y="10" width="5" height="30" fill="black"/>
+                    <rect x="20" y="10" width="2" height="30" fill="black"/>
+                    <rect x="25" y="10" width="5" height="30" fill="black"/>
+                    <rect x="35" y="10" width="3" height="30" fill="black"/>
+                    <rect x="42" y="10" width="2" height="30" fill="black"/>
+                    <rect x="50" y="10" width="5" height="30" fill="black"/>
+                    <rect x="60" y="10" width="5" height="30" fill="black"/>
+                    <rect x="70" y="10" width="2" height="30" fill="black"/>
+                    <rect x="75" y="10" width="5" height="30" fill="black"/>
+                    <rect x="85" y="10" width="3" height="30" fill="black"/>
+                    <rect x="92" y="10" width="2" height="30" fill="black"/>
+                    <rect x="100" y="10" width="5" height="30" fill="black"/>
+                </svg>
+            `;
+            
+            return `data:image/svg+xml;base64,${btoa(svgString)}`;
+        };
+
+        // Function to generate PDF
+        function generateSteelCargoSlipPDF(slip) {
+            // Get the necessary data
+            const numberOfBoxes = slip.numberOfBoxes || 1;
+            const barcodeDataURL = generateBarcodeDataURL(slip.trackingId);
+            
+            // Create HTML content for the PDF
+            const htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Steel Cargo Courier Slip</title>
+                    <meta charset="utf-8">
+                    <style>
+                        @page {
+                            size: A4 portrait;
+                            margin: 5mm;
+                        }
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 0;
+                            padding: 0;
+                            background: white;
+                        }
+                        .page-break {
+                            page-break-after: always;
+                        }
+                        .slip-container {
+                            width: 100%;
+                            height: 95mm;
+                            margin-bottom: 2mm;
+                            box-sizing: border-box;
+                            position: relative;
+                        }
+                        .slip {
+                            border: 2px solid #000;
+                            border-radius: 5px;
+                            background: #f8f8f8;
+                            overflow: hidden;
+                            width: 100%;
+                            height: 100%;
+                            box-sizing: border-box;
+                        }
+                        .grid {
+                            display: flex;
+                            flex-wrap: wrap;
+                            height: 100%;
+                        }
+                        .row {
+                            display: flex;
+                            width: 100%;
+                            border-bottom: 1px solid black;
+                        }
+                        .row:last-child {
+                            border-bottom: none;
+                        }
+                        .col {
+                            padding: 5px;
+                            box-sizing: border-box;
+                        }
+                        .col-border-right {
+                            border-right: 1px solid black;
+                        }
+                        .header-row {
+                            height: 30%;
+                        }
+                        .middle-row {
+                            height: 40%;
+                        }
+                        .footer-row {
+                            height: 20%;
+                        }
+                        .terms-row {
+                            height: 10%;
+                        }
+                        .barcode-col {
+                            width: 33.3%;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: space-between;
+                        }
+                        .company-col {
+                            width: 41.7%;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: space-between;
+                            text-align: center;
+                        }
+                        .destination-col {
+                            width: 25%;
+                            position: relative;
+                        }
+                        .sender-col, .receiver-col {
+                            width: 50%;
+                            overflow: hidden;
+                        }
+                        .info-col {
+                            width: 66.7%;
+                        }
+                        .details-col {
+                            width: 33.3%;
+                        }
+                        .tiny-text {
+                            font-size: 7px;
+                        }
+                        .small-text {
+                            font-size: 10px;
+                        }
+                        .medium-text {
+                            font-size: 12px;
+                        }
+                        .large-text {
+                            font-size: 16px;
+                            font-weight: bold;
+                        }
+                        .red-text {
+                            color: #c00;
+                        }
+                        .barcode-img {
+                            width: 90%;
+                            height: auto;
+                            max-height: 60px;
+                        }
+                        .tracking-id {
+                            font-size: 18px;
+                            font-weight: bold;
+                            text-align: center;
+                        }
+                        .copy-type {
+                            position: absolute;
+                            top: 5px;
+                            right: 5px;
+                            font-weight: bold;
+                            font-size: 10px;
+                        }
+                        .bold {
+                            font-weight: bold;
+                        }
+                        .text-center {
+                            text-align: center;
+                        }
+                        .text-right {
+                            text-align: right;
+                        }
+                        .details-row {
+                            display: flex;
+                            justify-content: space-between;
+                        }
+                        .details-label {
+                            font-weight: bold;
+                            font-size: 10px;
+                        }
+                        .details-value {
+                            font-weight: bold;
+                            font-size: 14px;
+                        }
+                        .to-pay {
+                            color: #c00;
+                            font-weight: bold;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <!-- Original Copy -->
+                    <div class="slip-container">
+                        <div class="slip">
+                            <div class="grid">
+                                <!-- Top Header Row -->
+                                <div class="row header-row">
+                                    <!-- Tracking Number / Barcode Area -->
+                                    <div class="col col-border-right barcode-col">
+                                        <div class="small-text bold">Document/Packet No.</div>
+                                        <img class="barcode-img" src="${barcodeDataURL}" alt="Barcode">
+                                        <div class="tracking-id">${slip.trackingId}</div>
+                                    </div>
+                                    
+                                    <!-- Company Info -->
+                                    <div class="col col-border-right company-col">
+                                        <div class="large-text red-text">Steel Courier & Cargo Ltd.</div>
+                                        <div class="small-text red-text">EXPRESS DISTRIBUTION SERVICES</div>
+                                        <div class="small-text">
+                                            Regd. Office: 4/1, Desh Bandhu Gupta Road,<br>
+                                            Paharganj, New Delhi - 110055<br>
+                                            Email: info@steelcourier.com
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Destination -->
+                                    <div class="col destination-col">
+                                        <div class="small-text bold" style="border-bottom: 1px solid black; padding-bottom: 2px;">Destination</div>
+                                        <div class="large-text text-center" style="margin-top: 20px;">
+                                            ${slip.customerAddress.split(', ').slice(-3, -2)[0] || 'DESTINATION'}
+                                        </div>
+                                        <div class="copy-type">Original</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Middle Row - Sender and Receiver -->
+                                <div class="row middle-row">
+                                    <!-- Sender Details -->
+                                    <div class="col col-border-right sender-col">
+                                        <div class="small-text bold" style="border-bottom: 1px solid black; padding-bottom: 2px;">From (Sender)</div>
+                                        <div style="padding: 5px 0;">
+                                            <div class="medium-text bold">${slip.senderName}</div>
+                                            <div class="small-text">${slip.senderAddress}</div>
+                                            <div class="small-text">Phone: ${slip.senderAddress.split('Phone: ')[1] || 'N/A'}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Receiver Details -->
+                                    <div class="col receiver-col">
+                                        <div class="small-text bold" style="border-bottom: 1px solid black; padding-bottom: 2px;">To (Receiver)</div>
+                                        <div style="padding: 5px 0;">
+                                            <div class="medium-text bold">${slip.customerName}</div>
+                                            <div class="small-text">${slip.customerAddress}</div>
+                                            <div class="small-text">Phone: ${slip.customerMobile}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Bottom Row - Information -->
+                                <div class="row footer-row">
+                                    <!-- Left side info -->
+                                    <div class="col col-border-right info-col">
+                                        <div style="display: flex; height: 100%;">
+                                            <div style="width: 33%; border-right: 1px solid black; padding: 5px; box-sizing: border-box;">
+                                                <div class="small-text bold text-center">Received by STEEL COURIER</div>
+                                                <div class="tiny-text text-center">For Receiver's Signature and Seal</div>
+                                            </div>
+                                            <div style="width: 67%; padding: 5px; box-sizing: border-box;">
+                                                <div style="display: flex; margin-top: 10px;">
+                                                    <div style="width: 50%; text-align: center;" class="small-text">
+                                                        <div>P.M.</div>
+                                                        <div>A.M.</div>
+                                                    </div>
+                                                    <div style="width: 50%; text-align: center;" class="small-text">Time</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Right side details -->
+                                    <div class="col details-col">
+                                        <div style="display: flex; flex-wrap: wrap; height: 100%;">
+                                            <div style="width: 50%; text-align: center; padding: 5px; box-sizing: border-box;">
+                                                <div class="details-label">No. of Pieces</div>
+                                                <div class="details-value">${numberOfBoxes}</div>
+                                            </div>
+                                            <div style="width: 50%; text-align: center; padding: 5px; box-sizing: border-box;">
+                                                <div class="details-label">Weight</div>
+                                                <div class="details-value">${slip.weight ? `${slip.weight} kg` : 'N/A'}</div>
+                                            </div>
+                                            <div style="width: 100%; text-align: center; padding: 5px; box-sizing: border-box;">
+                                                <div class="details-label">Shipment</div>
+                                                <div style="font-size: 18px; font-weight: bold;">
+                                                    ${slip.method === 'air' ? 'Air' : 'Surface'}
+                                                </div>
+                                                ${slip.isToPayShipping ? '<div class="to-pay">TO PAY</div>' : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Terms and Conditions Footer -->
+                                <div class="row terms-row">
+                                    <div class="col" style="width: 100%;">
+                                        <div class="medium-text bold red-text">Sender Copy</div>
+                                        <div class="tiny-text">
+                                            N.B. In case of any problem, Instrument subject to clearance from concerned bank, Loss of shipment, limited to Rs. 100/- per
+                                            consignment. Liability limited to extent of our service charges.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            // Create a hidden iframe to render the HTML
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            document.body.appendChild(iframe);
+            
+            // Write the HTML content to the iframe
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (iframeDoc) {
+                iframeDoc.open();
+                iframeDoc.write(htmlContent);
+                iframeDoc.close();
+                
+                // Print the iframe content
+                setTimeout(() => {
+                    try {
+                        // Focus the iframe window
+                        iframe.contentWindow?.focus();
+                        
+                        // Print the iframe content
+                        iframe.contentWindow?.print();
+                        
+                        // Remove the iframe after printing
+                        setTimeout(() => {
+                            document.body.removeChild(iframe);
+                            document.getElementById('result').style.display = 'block';
+                        }, 1000);
+                    } catch (error) {
+                        console.error('Error printing PDF:', error);
+                        alert('Error printing PDF: ' + error.message);
+                    }
+                }, 500);
+            }
+        }
+
+        // Attach event handler to button
+        document.getElementById('generatePdfButton').addEventListener('click', function() {
+            generateSteelCargoSlipPDF(sampleSlip);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+
+/* Regular print styles for A4 standard printing */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0.1in;
+  }
+  
+  /* Global print styles */
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    background-color: white !important;
+    font-size: 12pt !important;
+  }
+  
+  /* Aggressively hide ALL UI elements */
+  body > *:not(.print-only) {
+    display: none !important;
+  }
+  
+  /* Even more aggressive hiding */
+  #root > *:not(.print-only),
+  div:not(.print-only):not(.slip-content):not([id^="slip-"]),
+  header, nav, footer, aside, 
+  button, input, select,
+  .sidebar, .card, .header, .toaster, .dialog {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    z-index: -9999 !important;
+    width: 0 !important;
+  }
+  
+  /* Show ONLY the print content */
+  .print-only,
+  .slip-content,
+  [id^="slip-"] {
+    display: block !important;
+    visibility: visible !important;
+    position: relative !important;
+    width: 100% !important;
+    height: auto !important;
+    background-color: white !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    page-break-inside: avoid !important;
+  }
+  
+  /* Strip all UI styling */
+  .border, .rounded-md, .shadow, 
+  .border-courier-500, .bg-courier-50,
+  .border-blue-500, .bg-blue-50,
+  .card, .card-header, .card-content, .card-footer {
+    border: none !important;
+    box-shadow: none !important;
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Standardize all courier slips to fit exactly 3 per A4 page */
+  .slip-content,
+  [id^="slip-"],
+  .trackon-slip,
+  .global-slip,
+  .steel-slip,
+  .shree-slip {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 3.0in !important;  /* Further reduced height to ensure 3 fit on A4 */
+    page-break-inside: avoid !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    transform: none !important;
+    position: relative !important;
+  }
+  
+  /* Force each slip to maintain its dimensions with smaller scaling */
+  .trackon-slip > *,
+  .global-slip > *,
+  .steel-slip > *,
+  .shree-slip > * {
+    transform: scale(0.75) !important; /* Reduced scale to make templates 25% smaller */
+    transform-origin: top center !important;
+  }
+  
+  /* Thermal receipt printer styles (80mm width) */
+  @page receipt {
+    size: 80mm auto;
+    margin: 0mm;
+  }
+  
+  .packing-instruction,
+  .thermal-receipt {
+    page-break-inside: avoid !important;
+    width: 80mm !important;
+    max-width: 80mm !important;
+    font-family: monospace !important;
+    margin: 0 auto !important;
+    padding: 2mm !important;
+    box-sizing: border-box !important;
+    page: receipt !important;
+  }
+  
+  /* Ensure barcodes are printed properly */
+  svg.barcode {
+    max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
+  }
+
+  /* Reset modal/dialog styling */
+  .fixed,
+  .absolute,
+  .relative,
+  [style*="position: fixed"],
+  [style*="position: absolute"] {
+    position: static !important;
+  }
+
+  /* Make sure print dialog content is visible */
+  .print-dialog,
+  .print-dialog * {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    overflow: visible !important;
+    max-height: none !important;
+  }
+  
+  /* Ensure content in tabs is visible */
+  [role="tabpanel"] {
+    display: block !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  /* Hide toast notifications in print */
+  div[role="status"],
+  .toast,
+  .alert,
+  .notification {
+    display: none !important;
+  }
+  
+  /* Ensure all slip content is visible */
+  .slip-content *,
+  [id^="slip-"] * {
+    visibility: visible !important;
+    display: block !important;
+    background-color: white !important;
+  }
+
+  /* Hide buttons inside print content */
+  .slip-content button,
+  [id^="slip-"] button {
+    display: none !important;
+  }
+  
+  /* Force page breaks between sets of 3 slips */
+  .slip-content:nth-child(3n),
+  [id^="slip-"]:nth-child(3n) {
+    page-break-after: always !important;
+  }
+  
+  /* Specific styles for box weights print view */
+  .box-weights-table,
+  .box-weights-container,
+  [id^="box-weight-"],
+  .report-table,
+  .box-weights-print-view,
+  .report-print-view {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    page-break-inside: avoid !important;
+    background-color: white !important;
+    font-size: 10pt !important;
+  }
+  
+  /* Fix table formatting for box weights and reports */
+  .box-weights-print-view table,
+  .report-print-view table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+  }
+  
+  .box-weights-print-view th,
+  .box-weights-print-view td,
+  .report-print-view th,
+  .report-print-view td {
+    padding: 4px !important;
+    border: 1px solid #ddd !important;
+    text-align: left !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+  
+  /* Ensure box weights inputs display properly */
+  .box-weights-print-view input {
+    display: none !important;
+  }
+  
+  .box-weights-print-view .weight-display {
+    display: inline !important;
+    visibility: visible !important;
+  }
+  
+  /* Make sure the slip container doesn't break across pages */
+  .page-container {
+    page-break-inside: avoid !important;
+    margin-bottom: 0.1in !important;
+    height: auto !important;
+    max-height: 11in !important; /* A4 height with some margin */
+    overflow: hidden !important;
+  }
+  
+  /* Add spacing between slips to prevent overlap */
+  .slip-content + .slip-content,
+  [id^="slip-"] + [id^="slip-"] {
+    margin-top: 0.01in !important;
+  }
+  
+  /* Ensure barcodes print properly */
+  svg.barcode {
+    max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
+  }
+
+  /* Increase font size for number of pieces and weight values */
+  .pieces .value, .weight .value {
+    font-size: 160% !important;
+    font-weight: bold !important;
+  }
+}
