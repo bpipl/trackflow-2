@@ -208,40 +208,52 @@ VALUES
 ON CONFLICT (user_id) DO NOTHING;
 
 -- Pre-populate permissions
-DO $$
-DECLARE
-  permission_keys TEXT[] := ARRAY[
-    'viewCustomerDatabase', 'editCustomerDatabase', 'downloadReports', 
-    'manageUsers', 'generateSlips', 'viewLogs', 'viewBoxWeights', 
-    'editBoxWeights', 'editCompletedBoxWeights', 'cancelSlips', 
-    'printSlips', 'reprintSlips', 'deleteCustomers', 'viewReports', 
-    'viewCouriers', 'editCouriers', 'viewSenders', 'editSenders',
-    'useExpressMode', 'manageExpressMode'
-  ];
-  staff_permissions TEXT[] := ARRAY[
-    'viewCustomerDatabase', 'editCustomerDatabase', 'generateSlips',
-    'printSlips', 'reprintSlips', 'viewBoxWeights', 'editBoxWeights',
-    'viewCouriers', 'viewSenders'
-  ];
-  key TEXT;
-BEGIN
-  -- Admin permissions (all true)
-  FOREACH key IN ARRAY permission_keys
-  LOOP
-    INSERT INTO user_permissions (user_id, permission, value)
-    VALUES ('00000000-0000-0000-0000-000000000001', key, TRUE)
-    ON CONFLICT (user_id, permission) DO NOTHING;
-  END LOOP;
-  
-  -- Staff permissions (limited set)
-  FOREACH key IN ARRAY permission_keys
-  LOOP
-    INSERT INTO user_permissions (user_id, permission, value)
-    VALUES (
-      '00000000-0000-0000-0000-000000000002', 
-      key, 
-      key = ANY(staff_permissions)
-    )
-    ON CONFLICT (user_id, permission) DO NOTHING;
-  END LOOP;
-END $$;
+-- Insert admin permissions (all permissions set to true)
+INSERT INTO user_permissions (user_id, permission, value)
+VALUES 
+  ('00000000-0000-0000-0000-000000000001', 'viewCustomerDatabase', TRUE),
+  ('00000000-0000-0000-0000-000000000001', 'editCustomerDatabase', TRUE),
+  ('00000000-0000-0000-0000-000000000001', 'downloadReports', TRUE), 
+  ('00000000-0000-0000-0000-000000000001', 'manageUsers', TRUE),
+  ('00000000-0000-0000-0000-000000000001', 'generateSlips', TRUE),
+  ('00000000-0000-0000-0000-000000000001', 'viewLogs', TRUE),
+  ('00000000-0000-0000-0000-000000000001', 'viewBoxWeights', TRUE), 
+  ('00000000-0000-0000-0000-000000000001', 'editBoxWeights', TRUE),
+  ('00000000-0000-0000-0000-000000000001', 'editCompletedBoxWeights', TRUE),
+  ('00000000-0000-0000-0000-000000000001', 'cancelSlips', TRUE), 
+  ('00000000-0000-0000-0000-000000000001', 'printSlips', TRUE),
+  ('00000000-0000-0000-0000-000000000001', 'reprintSlips', TRUE),
+  ('00000000-0000-0000-0000-000000000001', 'deleteCustomers', TRUE),
+  ('00000000-0000-0000-0000-000000000001', 'viewReports', TRUE), 
+  ('00000000-0000-0000-0000-000000000001', 'viewCouriers', TRUE),
+  ('00000000-0000-0000-0000-000000000001', 'editCouriers', TRUE),
+  ('00000000-0000-0000-0000-000000000001', 'viewSenders', TRUE),
+  ('00000000-0000-0000-0000-000000000001', 'editSenders', TRUE),
+  ('00000000-0000-0000-0000-000000000001', 'useExpressMode', TRUE),
+  ('00000000-0000-0000-0000-000000000001', 'manageExpressMode', TRUE)
+ON CONFLICT (user_id, permission) DO NOTHING;
+
+-- Insert staff permissions (limited set to true, others false)
+INSERT INTO user_permissions (user_id, permission, value)
+VALUES 
+  ('00000000-0000-0000-0000-000000000002', 'viewCustomerDatabase', TRUE),
+  ('00000000-0000-0000-0000-000000000002', 'editCustomerDatabase', TRUE),
+  ('00000000-0000-0000-0000-000000000002', 'downloadReports', FALSE), 
+  ('00000000-0000-0000-0000-000000000002', 'manageUsers', FALSE),
+  ('00000000-0000-0000-0000-000000000002', 'generateSlips', TRUE),
+  ('00000000-0000-0000-0000-000000000002', 'viewLogs', FALSE),
+  ('00000000-0000-0000-0000-000000000002', 'viewBoxWeights', TRUE), 
+  ('00000000-0000-0000-0000-000000000002', 'editBoxWeights', TRUE),
+  ('00000000-0000-0000-0000-000000000002', 'editCompletedBoxWeights', FALSE),
+  ('00000000-0000-0000-0000-000000000002', 'cancelSlips', FALSE), 
+  ('00000000-0000-0000-0000-000000000002', 'printSlips', TRUE),
+  ('00000000-0000-0000-0000-000000000002', 'reprintSlips', TRUE),
+  ('00000000-0000-0000-0000-000000000002', 'deleteCustomers', FALSE),
+  ('00000000-0000-0000-0000-000000000002', 'viewReports', FALSE), 
+  ('00000000-0000-0000-0000-000000000002', 'viewCouriers', TRUE),
+  ('00000000-0000-0000-0000-000000000002', 'editCouriers', FALSE),
+  ('00000000-0000-0000-0000-000000000002', 'viewSenders', TRUE),
+  ('00000000-0000-0000-0000-000000000002', 'editSenders', FALSE),
+  ('00000000-0000-0000-0000-000000000002', 'useExpressMode', FALSE),
+  ('00000000-0000-0000-0000-000000000002', 'manageExpressMode', FALSE)
+ON CONFLICT (user_id, permission) DO NOTHING;
