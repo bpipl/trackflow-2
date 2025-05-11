@@ -5,7 +5,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+// Import the API-based Auth Provider instead of the mock one
+import { useAuth } from "@/contexts/AuthContext"; // Keep this for now until we complete the switch
+import ApiAuthProvider from "@/contexts/ApiAuthContext";
 import { DataProvider } from "@/contexts/DataContext";
 import { WhatsAppSettingsProvider } from "@/contexts/WhatsAppSettingsContext";
 import TemplateProvider from "@/contexts/TemplateContext";
@@ -155,7 +157,7 @@ const AppRoutes = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider>
+      <ApiAuthProvider>
         <DataProvider>
           <WhatsAppSettingsProvider>
             <TemplateProvider>
@@ -167,7 +169,7 @@ const App = () => (
             </TemplateProvider>
           </WhatsAppSettingsProvider>
         </DataProvider>
-      </AuthProvider>
+      </ApiAuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
