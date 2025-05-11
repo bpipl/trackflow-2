@@ -21,6 +21,7 @@ const auditLogRoutes = require('./routes/auditLogs');
 const whatsAppSettingsRoutes = require('./routes/whatsAppSettings');
 const templateRoutes = require('./routes/templates');
 const healthRoutes = require('./health');
+const deployCheckRoutes = require('./deploy-check');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -34,8 +35,9 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../dist')));
 }
 
-// Health check endpoint - must be before other routes for quick access
+// Health check and deployment check endpoints - must be before other routes for quick access
 app.use('/health', healthRoutes);
+app.use('/deploy-check', deployCheckRoutes);
 
 // API Routes - using router from the exported modules
 app.use('/api/auth', auth.router);

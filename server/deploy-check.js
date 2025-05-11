@@ -1,169 +1,200 @@
-/**
- * Pre-deployment check script for Track Flow Courier
- * Run this script before deploying to verify all necessary components
- */
-
+const express = require('express');
+const router = express.Router();
 const fs = require('fs');
 const path = require('path');
-const { Pool } = require('pg');
-require('dotenv').config();
+const os = require('os');
 
-console.log('\n=== TRACK FLOW COURIER DEPLOYMENT CHECK ===\n');
-
-// Check environment
-console.log('Environment Check:');
-console.log('- NODE_ENV:', process.env.NODE_ENV || 'Not set');
-console.log('- DATABASE_URL:', process.env.DATABASE_URL ? 'Set ✓' : 'Not set ✗');
-console.log('- JWT_SECRET:', process.env.JWT_SECRET ? 'Set ✓' : 'Not set ✗');
-console.log('- PORT:', process.env.PORT || '3001 (default)');
-
-// Check file structure
-console.log('\nFile Structure Check:');
-
-const requiredFiles = [
-  'server/index.js',
-  'server/health.js',
-  'server/db/index.js',
-  'server/db/migrations.sql',
-  'server/db/runMigrations.js',
-  'server/routes/auth.js',
-  'server/routes/customers.js',
-  'server/routes/couriers.js',
-  'server/routes/slips.js',
-  'server/routes/senderAddresses.js',
-  'server/routes/auditLogs.js',
-  'server/routes/whatsAppSettings.js',
-  'server/routes/templates.js'
-];
-
-const missingFiles = [];
-for (const file of requiredFiles) {
-  if (fs.existsSync(path.join(__dirname, '..', file))) {
-    console.log(`- ${file}: Found ✓`);
-  } else {
-    console.log(`- ${file}: Missing ✗`);
-    missingFiles.push(file);
-  }
+// Import debug helper if available
+let debug = { log: console.log };
+try {
+  debug = require('./debug');
+} catch (e) {
+  console.log('Debug module not available, using console.log');
 }
 
-// Check for production configuration
-console.log('\nProduction Configuration Check:');
-const railwayFileExists = fs.existsSync(path.join(__dirname, '..', 'railway.json'));
-console.log('- railway.json:', railwayFileExists ? 'Found ✓' : 'Missing ✗');
+// Static status page route - accessible without database connection
+router.get('/', (req, res) => {
+  const htmlContent = `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Flow Courier - Deployment Status</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .header h1 {
+        color: #2d3748;
+        margin-bottom: 0;
+      }
+      .status-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .status-card h2 {
+        margin-top: 0;
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 10px;
+        color: #4a5568;
+      }
+      .success {
+        color: #38a169;
+        font-weight: bold;
+      }
+      .warning {
+        color: #d69e2e;
+        font-weight: bold;
+      }
+      .error {
+        color: #e53e3e;
+        font-weight: bold;
+      }
+      .info-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .info-table td {
+        padding: 8px;
+        border-bottom: 1px solid #e2e8f0;
+      }
+      .info-table tr:last-child td {
+        border-bottom: none;
+      }
+      .info-table td:first-child {
+        font-weight: bold;
+        width: 40%;
+      }
+      .links {
+        margin-top: 30px;
+        text-align: center;
+      }
+      .links a {
+        display: inline-block;
+        margin: 0 10px;
+        padding: 10px 20px;
+        background: #4299e1;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+      }
+      .links a:hover {
+        background: #3182ce;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Track Flow Courier</h1>
+      <p>Deployment Status Check</p>
+    </div>
+    
+    <div class="status-card">
+      <h2>Server Status</h2>
+      <p class="success">✅ Server is running</p>
+      <table class="info-table">
+        <tr>
+          <td>Environment</td>
+          <td>${process.env.NODE_ENV || 'development'}</td>
+        </tr>
+        <tr>
+          <td>Start Time</td>
+          <td>${new Date().toISOString()}</td>
+        </tr>
+        <tr>
+          <td>Node Version</td>
+          <td>${process.version}</td>
+        </tr>
+        <tr>
+          <td>Platform</td>
+          <td>${process.platform} (${os.release()})</td>
+        </tr>
+      </table>
+    </div>
+    
+    <div class="status-card">
+      <h2>Frontend Status</h2>
+      <p>This lightweight page is served directly from the backend. Static files status:</p>
+      
+      <table class="info-table">
+        <tr>
+          <td>Static Files Directory</td>
+          <td>${path.join(__dirname, '../dist')}</td>
+        </tr>
+        <tr>
+          <td>Directory Exists</td>
+          <td>${fs.existsSync(path.join(__dirname, '../dist')) ? 
+            '<span class="success">✅ Yes</span>' : 
+            '<span class="error">❌ No - Build may be missing</span>'}</td>
+        </tr>
+        <tr>
+          <td>index.html Exists</td>
+          <td>${fs.existsSync(path.join(__dirname, '../dist/index.html')) ? 
+            '<span class="success">✅ Yes</span>' : 
+            '<span class="error">❌ No - Missing main file</span>'}</td>
+        </tr>
+      </table>
+    </div>
+    
+    <div class="links">
+      <a href="/health">Health Check API</a>
+      <a href="/health/diagnostics">Detailed Diagnostics</a>
+      <a href="/">Main Application</a>
+    </div>
+  </body>
+  </html>
+  `;
+  
+  res.send(htmlContent);
+});
 
-const procfileExists = fs.existsSync(path.join(__dirname, '..', 'Procfile'));
-console.log('- Procfile:', procfileExists ? 'Found ✓' : 'Missing ✗');
-
-// Check migration SQL for required tables
-console.log('\nDatabase Schema Check:');
-const migrationPath = path.join(__dirname, 'db', 'migrations.sql');
-const migrations = fs.readFileSync(migrationPath, 'utf8');
-
-const requiredTables = [
-  'users', 
-  'user_roles', 
-  'user_permissions', 
-  'customers', 
-  'couriers', 
-  'sender_addresses', 
-  'slips', 
-  'audit_logs',
-  'whatsapp_settings',
-  'templates', 
-  'reports'
-];
-
-const missingTables = [];
-for (const table of requiredTables) {
-  if (migrations.includes(`CREATE TABLE IF NOT EXISTS ${table}`)) {
-    console.log(`- Table ${table}: Found in schema ✓`);
-  } else {
-    console.log(`- Table ${table}: Missing from schema ✗`);
-    missingTables.push(table);
-  }
-}
-
-// Try to connect to database
-console.log('\nDatabase Connection Test:');
-async function testDatabaseConnection() {
-  if (!process.env.DATABASE_URL) {
-    console.log('- Connection test skipped: DATABASE_URL not set');
-    return;
-  }
-
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? {
-      rejectUnauthorized: false
-    } : false
-  });
-
+// Check frontend static files
+router.get('/check-static', (req, res) => {
+  const distPath = path.join(__dirname, '../dist');
+  const results = {
+    distExists: false,
+    indexHtmlExists: false,
+    staticFiles: [],
+    errors: []
+  };
+  
   try {
-    const client = await pool.connect();
-    console.log('- Database connection: Success ✓');
-    
-    // Check if tables exist
-    const res = await client.query(`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public'
-    `);
-    
-    const existingTables = res.rows.map(row => row.table_name);
-    console.log(`- Found ${existingTables.length} tables in database`);
-    
-    for (const table of requiredTables) {
-      if (existingTables.includes(table)) {
-        console.log(`  - Table ${table}: Exists in database ✓`);
-      } else {
-        console.log(`  - Table ${table}: Not in database yet, will be created by migrations ⚠️`);
+    // Check if dist directory exists
+    if (fs.existsSync(distPath)) {
+      results.distExists = true;
+      
+      // Check for index.html
+      if (fs.existsSync(path.join(distPath, 'index.html'))) {
+        results.indexHtmlExists = true;
+      }
+      
+      // List some static files
+      try {
+        const files = fs.readdirSync(distPath);
+        results.staticFiles = files.slice(0, 10); // Just list first 10 files
+      } catch (err) {
+        results.errors.push(`Error reading dist directory: ${err.message}`);
       }
     }
-    
-    client.release();
-    await pool.end();
-  } catch (error) {
-    console.log('- Database connection: Failed ✗');
-    console.log(`  Error: ${error.message}`);
+  } catch (err) {
+    results.errors.push(`Error checking static files: ${err.message}`);
   }
-}
+  
+  res.json(results);
+});
 
-// Summary and recommendations
-async function runChecks() {
-  await testDatabaseConnection();
-  
-  console.log('\n=== SUMMARY ===');
-  
-  if (missingFiles.length > 0) {
-    console.log('\n⚠️ Missing files:', missingFiles.join(', '));
-    console.log('These files need to be created before deployment.');
-  } else {
-    console.log('\n✓ All required files are present.');
-  }
-  
-  if (missingTables.length > 0) {
-    console.log('\n⚠️ Missing tables in schema:', missingTables.join(', '));
-    console.log('These tables need to be added to migrations.sql.');
-  } else {
-    console.log('\n✓ All required tables are in the schema.');
-  }
-  
-  if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'production') {
-    console.log('\n⚠️ NODE_ENV is not set to production');
-    console.log('Set NODE_ENV=production in your .env file or Railway environment variables.');
-  }
-  
-  if (!process.env.DATABASE_URL) {
-    console.log('\n⚠️ DATABASE_URL is not set');
-    console.log('Set DATABASE_URL in your .env file or Railway environment variables.');
-  }
-  
-  if (!process.env.JWT_SECRET) {
-    console.log('\n⚠️ JWT_SECRET is not set');
-    console.log('Set JWT_SECRET in your .env file or Railway environment variables.');
-  }
-  
-  console.log('\nDeployment Check Complete!');
-}
-
-runChecks();
+module.exports = router;
